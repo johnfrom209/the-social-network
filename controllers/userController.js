@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongoose').Types;
-const { User, Thought } = require('../models');
+const { application } = require('express');
+const { User, Thought, Application } = require('../models');
 
 
 const friendCount = async () =>
@@ -94,8 +95,10 @@ module.exports = {
             .then((user) =>
                 !user
                     ? res.status(404).json({ message: 'User not found, nothing deleted' })
-                    : res.json(user)
+                    // : res.json(user)
+                    : Thought.deleteMany({ _id: { $in: user.thoughts } })
             )
+            .then(() => res.json({ message: 'User and associated apps deleted!' }))
             .catch((err) => res.status(500).json(err));
     },
 

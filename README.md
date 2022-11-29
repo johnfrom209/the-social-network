@@ -30,6 +30,9 @@
   You can view the repo here:
   [Github](https://github.com/johnfrom209/the-social-network)
 
+  You can view the video demo here:
+  [Youtube](https://youtu.be/1dZRMzCDH5I)
+
   ## Installation
  Once you clone the repo, you want to run 'npm install' for the dependencies. After that you can run 'npm start' and run the routes via insomnia. 
 

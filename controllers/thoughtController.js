@@ -1,6 +1,20 @@
 const { ObjectId } = require('mongoose').Types;
 const { Thought, User } = require('../models');
 
+// const formatDate = async (thought) => {
+
+//     Thought.aggregate([
+//         { $match: { _id: ObjectId(thought) } },
+//         { $unwind: '$thought' },
+//     ])
+//         .then((date => {
+//             console.log(date);
+//             return date; //this is the object found by the id
+//             // return `${new Date(date.createdAt).getMonth() + 1}/${new Date(date.createdAt).getDate()}/${new Date(date.createdAt).getFullYear()
+//             //     }`;
+//         }))
+
+// }
 module.exports = {
     getThoughts(req, res) {
         Thought.find()
@@ -13,9 +27,11 @@ module.exports = {
             .select('__v')//??
             .then(async (thought) => {
                 !thought
-                    ? res.status(404).json({ message: 'User not found' })
+                    ? res.status(404).json({ message: 'Thought not found' })
                     : res.json({
                         thought,
+                        // date: await formatDate(thought)
+                        // text: thought.thoughtText,
                     })
             })
     },
@@ -58,5 +74,33 @@ module.exports = {
                 !thought
                     ? res.status(404).json({ message: 'Thought not found, could not update' })
                     : res.json(thought))
+    },
+
+    createReaction(req, res) {
+        Thought.findOneAndUpdate(
+            { _id: req.params.thoughtId },
+            { $push: { reactions: req.body.thoughtText } },
+            { runValidators: true, new: true }
+        )
+            .then((reaction) =>
+                !reaction
+                    ? res.status(404).json({ message: 'Thought not found' })
+                    : res.json(reaction)
+            )
+            .catch((err) => res.status(500).json(err));
+    },
+
+    delReaction(req, res) {
+        Thought.findOneAndUpdate(
+            { _id: req.params.thoughtId },
+            { $pull: { reactions: req.params.reactionId } },
+            { runValidators: true, new: true }
+        )
+            .then((user) =>
+                !user
+                    ? res.status(404).json({ message: 'Thought not found' })
+                    : res.json(user)
+            )
+            .catch((err) => res.status(500).json(err));
     }
 }

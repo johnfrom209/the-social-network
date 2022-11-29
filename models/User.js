@@ -30,13 +30,10 @@ const userSchema = new Schema(
     {
         toJSON: {
             virtuals: {
-                friendCount: {
-                    get() {
-                        return friends.length
-                    }
-                }
+                getters: true
             }
-        }
+        },
+        id: false
     }
 );
 

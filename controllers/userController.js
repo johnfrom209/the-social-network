@@ -2,6 +2,13 @@ const { ObjectId } = require('mongoose').Types;
 const { User, Thought } = require('../models');
 
 
+const friendCount = async () =>
+    // aggregate grabs everything inside of User
+    // but I only want one
+    User.findOne()
+        .count('friends')
+        .then((numberOfFriends) => numberOfFriends)
+
 const thought = async (userId) =>
     User.aggregate([
         { $match: { _id: ObjectId(userId) } },
@@ -15,24 +22,31 @@ const thought = async (userId) =>
         }
     ]);
 
-// const friend = async (userId) =>
-//     User.aggregate([
-//         { $match: { _id: ObjectId(userId) } },
-//         {
-//             $group: {
-//                 _id: ObjectId(userId),
-//                 friends: {}
-//             }
-//         }
-//     ])
-
-
+const friend = async (userId) =>
+    User.aggregate([
+        { $match: { _id: ObjectId(userId) } },
+        { $unwind: '$friends' },
+        {
+            $group: {
+                _id: ObjectId(userId),
+                // friendCount: { $sum: '$friends' }
+            }
+        }
+    ])
 
 module.exports = {
     // get all users
     getUsers(req, res) {
         User.find()
-            .then((users) => res.json(users))
+            .then(async (users) => {
+                // const friendCount = users.friends.length;
+                const userObj = {
+                    users,
+                    // friendCount
+                    // friiiendCount: await friendCount(req.params.userId)
+                };
+                return res.json(userObj);
+            })
             .catch((err) => res.status(500).json(err))
     },
 
@@ -47,7 +61,8 @@ module.exports = {
                     : res.json({
                         user,
                         thought: await thought(req.params.userId),
-                        // friends: await friend(req.params.userId)
+                        friends: await friend(req.params.userId),
+                        // friendCount: friends.length
                     })
             })
             .catch((err) => {
@@ -76,6 +91,35 @@ module.exports = {
 
     deleteUser(req, res) {
         User.findOneAndDelete({ _id: req.params.userId })
+            .then((user) =>
+                !user
+                    ? res.status(404).json({ message: 'User not found, nothing deleted' })
+                    : res.json(user)
+            )
+            .catch((err) => res.status(500).json(err));
+    },
+
+    updateFriend(req, res) {
+        User.findOneAndUpdate(
+            { _id: req.params.userId },
+            { $push: { friends: req.params.friendId } },
+            { runValidators: true, new: true }
+        )
+            .then((user) =>
+                !user
+                    ? res.status(404).json({ message: 'User not found, nothing deleted' })
+                    : res.json(user)
+            )
+            .catch((err) => res.status(500).json(err));
+
+    },
+
+    deleteFriend(req, res) {
+        User.findOneAndUpdate(
+            { _id: req.params.userId },
+            { $pull: { friends: req.params.friendId } },
+            { runValidators: true, new: true }
+        )
             .then((user) =>
                 !user
                     ? res.status(404).json({ message: 'User not found, nothing deleted' })

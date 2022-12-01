@@ -1,20 +1,11 @@
 const { ObjectId } = require('mongoose').Types;
 const { Thought, User } = require('../models');
 
-// const formatDate = async (thought) => {
+const formatDate = async (thought) => {
 
-//     Thought.aggregate([
-//         { $match: { _id: ObjectId(thought) } },
-//         { $unwind: '$thought' },
-//     ])
-//         .then((date => {
-//             console.log(date);
-//             return date; //this is the object found by the id
-//             // return `${new Date(date.createdAt).getMonth() + 1}/${new Date(date.createdAt).getDate()}/${new Date(date.createdAt).getFullYear()
-//             //     }`;
-//         }))
-
-// }
+    return `${new Date(thought.createdAt).getMonth() + 1}/${new Date(thought.createdAt).getDate()}/${new Date(thought.createdAt).getFullYear()
+        }`;
+}
 module.exports = {
     getThoughts(req, res) {
         Thought.find()
@@ -24,15 +15,16 @@ module.exports = {
 
     getSingleThought(req, res) {
         Thought.findOne({ _id: req.params.thoughtId })
-            .select('__v')//??
+            // .select('__v')//??
             .then(async (thought) => {
-                !thought
-                    ? res.status(404).json({ message: 'Thought not found' })
-                    : res.json({
-                        thought,
-                        // date: await formatDate(thought)
-                        // text: thought.thoughtText,
-                    })
+                if (!thought) {
+                    return res.status(404).json({ message: 'Thought not found' })
+                }
+                return res.json({
+                    thought,
+                    date: await formatDate(thought)
+                    // text: thought.thoughtText,
+                })
             })
     },
 
@@ -79,7 +71,7 @@ module.exports = {
     createReaction(req, res) {
         Thought.findOneAndUpdate(
             { _id: req.params.thoughtId },
-            { $push: { reactions: req.body.thoughtText } },
+            { $set: { reactions: req.body } },
             { runValidators: true, new: true }
         )
             .then((reaction) =>

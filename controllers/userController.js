@@ -3,12 +3,15 @@ const { application } = require('express');
 const { User, Thought, Application } = require('../models');
 
 
-const friendCount = async () =>
-    // aggregate grabs everything inside of User
-    // but I only want one
-    User.findOne()
-        .count('friends')
-        .then((numberOfFriends) => numberOfFriends)
+const friendCount = async (user) => {
+    console.log(user);
+    // return count(user.friends)
+    return user.friends.length
+}
+// aggregate grabs everything inside of User
+// but I only want one
+// User.findOne()
+// .then((numberOfFriends) => numberOfFriends)
 
 const thought = async (userId) =>
     User.aggregate([
@@ -23,17 +26,17 @@ const thought = async (userId) =>
         }
     ]);
 
-const friend = async (userId) =>
-    User.aggregate([
-        { $match: { _id: ObjectId(userId) } },
-        { $unwind: '$friends' },
-        {
-            $group: {
-                _id: ObjectId(userId),
-                // friendCount: { $sum: '$friends' }
-            }
-        }
-    ])
+// const friend = async (userId) =>
+//     User.aggregate([
+//         { $match: { _id: ObjectId(userId) } },
+//         { $unwind: '$friends' },
+//         {
+//             $group: {
+//                 _id: ObjectId(userId),
+//                 // friendCount: { $sum: '$friends' }
+//             }
+//         }
+//     ])
 
 module.exports = {
     // get all users
@@ -44,7 +47,7 @@ module.exports = {
                 const userObj = {
                     users,
                     // friendCount
-                    // friiiendCount: await friendCount(req.params.userId)
+                    // friiiendCount: await friendCount(users)
                 };
                 return res.json(userObj);
             })
@@ -55,15 +58,15 @@ module.exports = {
     // return all thought by the user
     getUserId(req, res) {
         User.findOne({ _id: req.params.userId })
-            .select('__v')//??
+            // .select('__v')//??
             .then(async (user) => {
                 !user
                     ? res.status(404).json({ message: 'User not found' })
                     : res.json({
                         user,
                         thought: await thought(req.params.userId),
-                        friends: await friend(req.params.userId),
-                        // friendCount: friends.length
+                        // friends: await friend(req.params.userId),
+                        friendCount: await friendCount(user)
                     })
             })
             .catch((err) => {
